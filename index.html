@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestra Live Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0A1628;
+            color: #FFFFFF;
+            min-height: 100vh;
+        }
+
+        /* Top Bar */
+        .topbar {
+            background: #0D1F3C;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #1A2F50;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 36px;
+            height: 36px;
+            background: #1A3A6B;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .topbar h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #FFFFFF;
+        }
+
+        .topbar p {
+            font-size: 11px;
+            color: #5577AA;
+            margin-top: 2px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #1A3A6B;
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #445566;
+            transition: background 0.3s;
+        }
+
+        .status-dot.connected { background: #00CC66; box-shadow: 0 0 8px #00CC66; }
+        .status-dot.disconnected { background: #445566; }
+
+        .status-text {
+            font-size: 12px;
+            color: #8899BB;
+        }
+
+        /* Main content */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px 20px;
+        }
+
+        /* Cards */
+        .card {
+            background: #1A3A6B;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .card-label {
+            font-size: 10px;
+            color: #5577AA;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        /* Live transcript */
+        .live-section {
+            background: #0D1F3C;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid #1A3A6B;
+        }
+
+        .live-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #445566;
+            transition: all 0.3s;
+        }
+
+        .live-dot.active {
+            background: #00CC66;
+            box-shadow: 0 0 6px #00CC66;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .live-label {
+            font-size: 11px;
+            color: #5577AA;
+            letter-spacing: 1px;
+        }
+
+        .word-count {
+            font-size: 11px;
+            color: #5577AA;
+        }
+
+        .transcript-box {
+            background: #0A1628;
+            border-radius: 12px;
+            padding: 16px;
+            min-height: 120px;
+            font-size: 17px;
+            line-height: 1.7;
+            color: #FFFFFF;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+
+        .transcript-placeholder {
+            color: #2A4060;
+            font-style: italic;
+            font-size: 15px;
+        }
+
+        .partial-text {
+            color: #5577AA;
+            font-style: italic;
+        }
+
+        /* Waveform bars */
+        .waveform {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            height: 40px;
+            margin-bottom: 16px;
+        }
+
+        .bar {
+            width: 4px;
+            border-radius: 2px;
+            background: #1A3A6B;
+            transition: height 0.15s ease;
+        }
+
+        /* Stats row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background: #0D1F3C;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #4D9FFF;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #5577AA;
+            margin-top: 4px;
+        }
+
+        /* History */
+        .history-card {
+            background: #0D1F3C;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .clear-btn {
+            background: none;
+            border: 1px solid #FF4D4D;
+            color: #FF4D4D;
+            padding: 4px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .clear-btn:hover { background: #FF4D4D22; }
+
+        .history-item {
+            display: flex;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #1A2F50;
+            align-items: flex-start;
+        }
+
+        .history-item:last-child { border-bottom: none; }
+
+        .history-time {
+            font-size: 11px;
+            color: #5577AA;
+            white-space: nowrap;
+            min-width: 70px;
+            padding-top: 2px;
+        }
+
+        .history-text {
+            font-size: 14px;
+            color: #AABBDD;
+            line-height: 1.5;
+        }
+
+        .history-empty {
+            text-align: center;
+            color: #2A4060;
+            padding: 24px;
+            font-size: 14px;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 24px;
+            color: #3A5070;
+            font-size: 11px;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 600px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .topbar h1 { font-size: 18px; }
+            .stat-value { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+    <div class="topbar-left">
+        <div class="logo">🤚</div>
+        <div>
+            <h1>Gestra</h1>
+            <p>Live Dashboard</p>
+        </div>
+    </div>
+    <div class="status-badge">
+        <div class="status-dot disconnected" id="statusDot"></div>
+        <span class="status-text" id="statusText">Disconnected</span>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="container">
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-value" id="wordCount">0</div>
+            <div class="stat-label">Words Today</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="sentenceCount">0</div>
+            <div class="stat-label">Sentences</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="sessionTime">0m</div>
+            <div class="stat-label">Session Time</div>
+        </div>
+    </div>
+
+    <!-- Live Transcript -->
+    <div class="live-section">
+        <div class="live-header">
+            <div class="live-indicator">
+                <div class="live-dot" id="liveDot"></div>
+                <span class="live-label">LIVE TRANSCRIPT</span>
+            </div>
+            <span class="word-count" id="liveWordCount">0 words</span>
+        </div>
+
+        <!-- Waveform -->
+        <div class="waveform" id="waveform"></div>
+
+        <div class="transcript-box" id="transcriptBox">
+            <span class="transcript-placeholder">Waiting for speech...</span>
+        </div>
+    </div>
+
+    <!-- History -->
+    <div class="history-card">
+        <div class="history-header">
+            <span class="card-label">Translation History</span>
+            <button class="clear-btn" onclick="clearHistory()">Clear</button>
+        </div>
+        <div id="historyList">
+            <div class="history-empty">No history yet. Start speaking!</div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Made by Gestra Team</p>
+        <p style="margin-top:4px">© 2026 Gestra. All rights reserved.</p>
+    </div>
+
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, onValue, set, remove, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+        databaseURL: "https://gestra-66a40-default-rtdb.firebaseio.com/"
+    };
+
+    const app      = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+
+    // ── State ──────────────────────────────────────────────────────
+    let confirmedText  = "";
+    let wordCount      = 0;
+    let sentenceCount  = 0;
+    let sessionStart   = Date.now();
+    let waveformActive = false;
+    let waveformTimer  = null;
+
+    // ── Waveform setup ─────────────────────────────────────────────
+    const waveformEl = document.getElementById("waveform");
+    const BAR_COUNT  = 28;
+    const bars       = [];
+
+    for (let i = 0; i < BAR_COUNT; i++) {
+        const bar = document.createElement("div");
+        bar.className = "bar";
+        bar.style.height = "4px";
+        waveformEl.appendChild(bar);
+        bars.push(bar);
+    }
+
+    function animateWaveform() {
+        bars.forEach(bar => {
+            const h = waveformActive
+                ? Math.random() * 32 + 4
+                : Math.random() * 6 + 2;
+            bar.style.height = h + "px";
+            bar.style.background = waveformActive
+                ? (h > 24 ? "#6DB8FF" : h > 14 ? "#4D9FFF" : "#1A4A8A")
+                : "#1A3A6B";
+        });
+    }
+
+    setInterval(animateWaveform, 80);
+
+    // ── Session timer ──────────────────────────────────────────────
+    setInterval(() => {
+        const mins = Math.floor((Date.now() - sessionStart) / 60000);
+        document.getElementById("sessionTime").textContent =
+            mins < 60 ? mins + "m" : Math.floor(mins/60) + "h " + (mins%60) + "m";
+    }, 10000);
+
+    // ── Listen to connection status ────────────────────────────────
+    onValue(ref(database, "status/connected"), (snap) => {
+        const connected = snap.val();
+        const dot  = document.getElementById("statusDot");
+        const text = document.getElementById("statusText");
+        if (connected) {
+            dot.className  = "status-dot connected";
+            text.textContent = "Connected";
+            sessionStart   = Date.now();
+        } else {
+            dot.className  = "status-dot disconnected";
+            text.textContent = "Disconnected";
+            setLive(false);
+        }
+    });
+
+    // ── Listen to partial (live) text ──────────────────────────────
+    onValue(ref(database, "live/partial"), (snap) => {
+        const partial = snap.val();
+        if (partial) {
+            setLive(true);
+            showTranscript(confirmedText, partial);
+        }
+    });
+
+    // ── Listen to final results ────────────────────────────────────
+    onValue(ref(database, "live/result"), (snap) => {
+        const text = snap.val();
+        if (text) {
+            setLive(false);
+            if (confirmedText === "") {
+                confirmedText = text;
+            } else {
+                confirmedText += "\n" + text;
+            }
+            wordCount     += text.split(/\s+/).length;
+            sentenceCount += 1;
+
+            document.getElementById("wordCount").textContent     = wordCount;
+            document.getElementById("sentenceCount").textContent = sentenceCount;
+
+            showTranscript(confirmedText, "");
+            updateLiveWordCount();
+        }
+    });
+
+    // ── Listen to history ──────────────────────────────────────────
+    onValue(ref(database, "history"), (snap) => {
+        const data = snap.val();
+        renderHistory(data);
+    });
+
+    // ── Show transcript ────────────────────────────────────────────
+    function showTranscript(confirmed, partial) {
+        const box = document.getElementById("transcriptBox");
+        if (!confirmed && !partial) {
+            box.innerHTML = '<span class="transcript-placeholder">Waiting for speech...</span>';
+            return;
+        }
+        let html = confirmed
+            ? confirmed.replace(/\n/g, "<br>")
+            : "";
+        if (partial) {
+            if (html) html += " ";
+            html += `<span class="partial-text">${partial}</span>`;
+        }
+        box.innerHTML = html;
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function updateLiveWordCount() {
+        const words = confirmedText.trim().split(/\s+/).filter(w => w).length;
+        document.getElementById("liveWordCount").textContent =
+            words + " word" + (words !== 1 ? "s" : "");
+    }
+
+    function setLive(active) {
+        waveformActive = active;
+        const dot = document.getElementById("liveDot");
+        dot.className = active ? "live-dot active" : "live-dot";
+
+        if (active) {
+            clearTimeout(waveformTimer);
+        } else {
+            waveformTimer = setTimeout(() => { waveformActive = false; }, 2000);
+        }
+    }
+
+    // ── Render history ─────────────────────────────────────────────
+    function renderHistory(data) {
+        const list = document.getElementById("historyList");
+        if (!data) {
+            list.innerHTML = '<div class="history-empty">No history yet. Start speaking!</div>';
+            return;
+        }
+
+        const entries = Object.values(data).reverse();
+        list.innerHTML = entries.map(entry => `
+            <div class="history-item">
+                <span class="history-time">${entry.time || ""}</span>
+                <span class="history-text">${entry.text || ""}</span>
+            </div>
+        `).join("");
+    }
+
+    // ── Clear history ──────────────────────────────────────────────
+    window.clearHistory = function() {
+        if (confirm("Clear all history?")) {
+            remove(ref(database, "history"));
+            confirmedText = "";
+            wordCount     = 0;
+            sentenceCount = 0;
+            document.getElementById("wordCount").textContent     = "0";
+            document.getElementById("sentenceCount").textContent = "0";
+            document.getElementById("liveWordCount").textContent = "0 words";
+            showTranscript("", "");
+        }
+    };
+</script>
+
+</body>
+</html>
