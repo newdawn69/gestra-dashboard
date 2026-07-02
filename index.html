@@ -154,6 +154,11 @@
         <div class="emergency-meta">
             <div class="emergency-ts-label">LAST ALERT</div>
             <div class="emergency-ts-value" id="emergencyTimestamp">—</div>
+            <button id="clearAlertBtn" onclick="clearEmergencyAlert()"
+                style="display:none; margin-top:10px; background:none; border:1px solid #FF6B6B;
+                color:#FF6B6B; padding:4px 12px; border-radius:8px; cursor:pointer; font-size:11px;">
+                Clear Alert
+            </button>
         </div>
     </div>
 
@@ -228,7 +233,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue, remove, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const app      = initializeApp({ databaseURL: "https://gestra-66a40-default-rtdb.firebaseio.com/" });
 const database = getDatabase(app);
@@ -367,11 +372,13 @@ onValue(ref(database, "emergency"), snap => {
         title.textContent = "EMERGENCY ACTIVE";
         subtitle.textContent = "An emergency alert has been triggered by the Gestra device!";
         document.getElementById("emergencyTimestamp").textContent = timestamp;
+        document.getElementById("clearAlertBtn").style.display = "block";
     } else {
         section.className = "emergency-section";
         icon.textContent  = "🛡️";
         title.textContent = "No Active Alert";
         subtitle.textContent = "Monitoring for emergency signals from Gestra device";
+        document.getElementById("clearAlertBtn").style.display = "none";
     }
 });
 
@@ -415,6 +422,12 @@ function renderHistory(data) {
         </div>
     `).join("");
 }
+
+window.clearEmergencyAlert = function() {
+    if (confirm("Clear the active emergency alert?")) {
+        set(ref(database, "emergency"), { active: false, timestamp: Date.now() });
+    }
+};
 
 window.clearHistory = function() {
     if (confirm("Clear all history?")) {
