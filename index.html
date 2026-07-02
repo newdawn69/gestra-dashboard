@@ -189,7 +189,14 @@
                 <div class="live-dot" id="liveDot"></div>
                 <span class="live-label">LIVE TRANSCRIPT</span>
             </div>
-            <span style="font-size:11px;color:#5577AA" id="liveWordCount">0 words</span>
+            <div style="display:flex;align-items:center;gap:12px">
+                <span style="font-size:11px;color:#5577AA" id="liveWordCount">0 words</span>
+                <button onclick="clearLiveTranscript()"
+                    style="background:none;border:1px solid #2A4060;color:#5577AA;
+                    padding:3px 10px;border-radius:8px;cursor:pointer;font-size:11px;">
+                    Clear
+                </button>
+            </div>
         </div>
         <div class="waveform" id="waveform"></div>
         <div class="transcript-box" id="transcriptBox">
@@ -427,6 +434,16 @@ window.clearEmergencyAlert = function() {
     if (confirm("Clear the active emergency alert?")) {
         set(ref(database, "emergency"), { active: false, timestamp: Date.now() });
     }
+};
+
+window.clearLiveTranscript = function() {
+    confirmedText = "";
+    wordCount = sentenceCount = 0;
+    document.getElementById("wordCount").textContent     = "0";
+    document.getElementById("sentenceCount").textContent = "0";
+    document.getElementById("liveWordCount").textContent = "0 words";
+    showTranscript("", "");
+    remove(ref(database, "live"));
 };
 
 window.clearHistory = function() {
