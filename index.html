@@ -32,6 +32,39 @@
 
         .container { max-width: 960px; margin: 0 auto; padding: 24px 20px; }
 
+        /* ── Emergency section ── */
+        .emergency-section {
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.4s;
+            border: 2px solid #1A3A6B;
+            background: #0D1F3C;
+        }
+        .emergency-section.alert-active {
+            background: #3D0A0A;
+            border-color: #FF4D4D;
+            animation: alertPulse 1.5s infinite;
+        }
+        @keyframes alertPulse { 0%,100%{border-color:#FF4D4D} 50%{border-color:#FF000055} }
+
+        .emergency-icon { font-size: 40px; min-width: 48px; text-align: center; }
+
+        .emergency-body { flex: 1; }
+        .emergency-title { font-size: 18px; font-weight: 700; color: #5577AA; }
+        .emergency-section.alert-active .emergency-title { color: #FF6B6B; }
+        .emergency-subtitle { font-size: 12px; color: #3A5070; margin-top: 3px; }
+        .emergency-section.alert-active .emergency-subtitle { color: #FFAAAA; }
+
+        .emergency-meta { text-align: right; }
+        .emergency-ts-label { font-size: 9px; color: #5577AA; letter-spacing: 1px; }
+        .emergency-ts-value { font-size: 12px; color: #AABBDD; margin-top: 3px; }
+        .emergency-section.alert-active .emergency-ts-value { color: #FF9999; }
+
+        /* Stats */
         .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
         .stat-card { background: #0D1F3C; border-radius: 12px; padding: 16px; text-align: center; }
         .stat-value { font-size: 24px; font-weight: 700; color: #4D9FFF; }
@@ -65,7 +98,6 @@
         .transcript-placeholder { color: #2A4060; font-style: italic; font-size: 15px; }
         .partial-text { color: #5577AA; font-style: italic; }
 
-        /* Map */
         .map-card { background: #0D1F3C; border-radius: 16px; overflow: hidden; margin-bottom: 16px; }
         .map-header { padding: 16px 20px 12px; display: flex; align-items: center; justify-content: space-between; }
         .map-header-left { display: flex; align-items: center; gap: 8px; }
@@ -74,7 +106,6 @@
         .map-updated { font-size: 10px; color: #3A5070; }
         .no-location { height: 280px; display: flex; align-items: center; justify-content: center; color: #2A4060; font-size: 14px; background: #0A1628; }
 
-        /* History */
         .history-card { background: #0D1F3C; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
         .history-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
         .clear-btn { background: none; border: 1px solid #FF4D4D; color: #FF4D4D; padding: 4px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; }
@@ -90,6 +121,8 @@
         @media(max-width:600px) {
             .stats-row { grid-template-columns: repeat(2,1fr); }
             .topbar h1 { font-size: 18px; }
+            .emergency-section { flex-wrap: wrap; }
+            .emergency-meta { text-align: left; width: 100%; }
         }
     </style>
 </head>
@@ -110,6 +143,19 @@
 </div>
 
 <div class="container">
+
+    <!-- Emergency Section (top) -->
+    <div class="emergency-section" id="emergencySection">
+        <div class="emergency-icon" id="emergencyIcon">🛡️</div>
+        <div class="emergency-body">
+            <div class="emergency-title" id="emergencyTitle">No Active Alert</div>
+            <div class="emergency-subtitle" id="emergencySubtitle">Monitoring for emergency signals from Gestra device</div>
+        </div>
+        <div class="emergency-meta">
+            <div class="emergency-ts-label">LAST ALERT</div>
+            <div class="emergency-ts-value" id="emergencyTimestamp">—</div>
+        </div>
+    </div>
 
     <!-- Stats -->
     <div class="stats-row">
@@ -269,66 +315,64 @@ onValue(ref(database, "history"), snap => {
 onValue(ref(database, "location"), snap => {
     const loc = snap.val();
     if (!loc) return;
-
     const lat = loc.lat;
     const lng = loc.lng;
     const acc = loc.accuracy ? Math.round(loc.accuracy) + "m" : "—";
-    const ts  = loc.timestamp
-        ? new Date(loc.timestamp).toLocaleTimeString()
-        : "";
-
-    // Update stats
+    const ts  = loc.timestamp ? new Date(loc.timestamp).toLocaleTimeString() : "";
     document.getElementById("accuracy").textContent = acc;
-    document.getElementById("mapCoords").textContent =
-        lat.toFixed(5) + ", " + lng.toFixed(5);
-    document.getElementById("mapUpdated").textContent =
-        "Updated: " + ts;
-
-    // Show map
+    document.getElementById("mapCoords").textContent = lat.toFixed(5) + ", " + lng.toFixed(5);
+    document.getElementById("mapUpdated").textContent = "Updated: " + ts;
     document.getElementById("noLocation").style.display = "none";
     document.getElementById("map").style.display = "block";
-
     if (!mapInitialized) {
-        // Init Leaflet map
         map = L.map("map", { zoomControl: true }).setView([lat, lng], 16);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution: "© OpenStreetMap contributors",
-            maxZoom: 19,
+            attribution: "© OpenStreetMap contributors", maxZoom: 19,
         }).addTo(map);
-
-        // Custom marker
         const icon = L.divIcon({
-            html: `<div style="
-                width:24px;height:24px;
-                background:#4D9FFF;
-                border:3px solid #fff;
-                border-radius:50%;
-                box-shadow:0 0 12px #4D9FFF;
-            "></div>`,
-            iconSize: [24, 24],
-            iconAnchor: [12, 12],
-            className: "",
+            html: `<div style="width:24px;height:24px;background:#4D9FFF;border:3px solid #fff;border-radius:50%;box-shadow:0 0 12px #4D9FFF;"></div>`,
+            iconSize: [24,24], iconAnchor: [12,12], className: "",
         });
-
         marker = L.marker([lat, lng], { icon }).addTo(map);
         marker.bindPopup("<b>Gestra Device</b><br>Accuracy: " + acc).openPopup();
         mapInitialized = true;
     } else {
-        // Update marker position
         marker.setLatLng([lat, lng]);
         marker.getPopup().setContent("<b>Gestra Device</b><br>Accuracy: " + acc);
         map.panTo([lat, lng]);
     }
-
-    // Accuracy circle
     if (window._accCircle) map.removeLayer(window._accCircle);
     window._accCircle = L.circle([lat, lng], {
-        radius: loc.accuracy || 20,
-        color: "#4D9FFF",
-        fillColor: "#4D9FFF",
-        fillOpacity: 0.1,
-        weight: 1,
+        radius: loc.accuracy || 20, color: "#4D9FFF",
+        fillColor: "#4D9FFF", fillOpacity: 0.1, weight: 1,
     }).addTo(map);
+});
+
+// ── Emergency ──────────────────────────────────────────────────────
+onValue(ref(database, "emergency"), snap => {
+    const data = snap.val();
+    if (!data) return;
+
+    const active    = data.active === true;
+    const timestamp = data.timestamp ? new Date(data.timestamp).toLocaleString() : "—";
+
+    const section  = document.getElementById("emergencySection");
+    const icon     = document.getElementById("emergencyIcon");
+    const title    = document.getElementById("emergencyTitle");
+    const subtitle = document.getElementById("emergencySubtitle");
+
+    if (active) {
+        section.className = "emergency-section alert-active";
+        icon.textContent  = "🚨";
+        title.textContent = "EMERGENCY ACTIVE";
+        subtitle.textContent = "An emergency alert has been triggered by the Gestra device!";
+        document.getElementById("emergencyTimestamp").textContent = timestamp;
+    } else {
+        section.className = "emergency-section";
+        icon.textContent  = "🛡️";
+        title.textContent = "No Active Alert";
+        subtitle.textContent = "Monitoring for emergency signals from Gestra device";
+    }
 });
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -349,14 +393,12 @@ function showTranscript(confirmed, partial) {
 
 function updateLiveWordCount() {
     const w = confirmedText.trim().split(/\s+/).filter(x=>x).length;
-    document.getElementById("liveWordCount").textContent =
-        w + " word" + (w!==1?"s":"");
+    document.getElementById("liveWordCount").textContent = w + " word" + (w!==1?"s":"");
 }
 
 function setLive(active) {
     waveformActive = active;
-    document.getElementById("liveDot").className =
-        active ? "live-dot active" : "live-dot";
+    document.getElementById("liveDot").className = active ? "live-dot active" : "live-dot";
 }
 
 function renderHistory(data) {
